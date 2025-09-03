@@ -1,0 +1,48 @@
+project(ai_movement)
+cmake_minimum_required(VERSION 3.11)
+# Require modern C++
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+#### Setup Directories ####
+#Main output directory
+SET(OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin/")
+# Ouput all DLLs from all libs into main build folder
+SET(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${OUTPUT_DIRECTORY})
+
+#### Add External Dependencies ####
+add_subdirectory("lib/SFML")
+set(SFML_INCS "lib/SFML/include")
+link_directories("${CMAKE_BINARY_DIR}/lib/SFML/lib")
+
+add_subdirectory("lib/box2d")
+set(B2D_INCS "lib/box2d/include")
+link_directories("${CMAKE_BINARY_DIR}/lib/box2d/lib")
+
+#### Engine ####
+add_library(engine STATIC engine/game_system.cpp 
+                        engine/renderer.cpp 
+                        engine/ecm.cpp
+                        engine/physics.cpp)
+target_include_directories(engine INTERFACE engine ${SFML_INCS} ${B2D_INCS})
+target_link_libraries(engine sfml-graphics box2d)
+
+#### executable ####
+add_executable(ai_movement 
+    main.cpp 
+    scenes.cpp
+    ctrl_cmps.cpp
+    ai_cmps.cpp
+    graphics_cmps.cpp)
+target_include_directories(ai_movement PRIVATE ${SFML_INCS} engine)
+target_link_libraries(ai_movement sfml-graphics engine)
+set_target_properties(ai_movement 
+    PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY
+    ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/$(Configuration)
+)
+add_custom_target(copy_resources ALL COMMAND ${CMAKE_COMMAND} 
+  -E copy_directory
+    "${PROJECT_SOURCE_DIR}/resources"
+    ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/resources
+)
+add_dependencies(ai_movement copy_resources)
